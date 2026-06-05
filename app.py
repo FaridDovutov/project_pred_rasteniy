@@ -43,7 +43,7 @@ st.markdown("""
         border-color: #C0C0C0 !important;
     }
 </style>
-""", unsafe_allow_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 2. СЛОВАРЬ ПЕРЕВОДОВ (МУЛЬТИЯЗЫЧНОСТЬ)
