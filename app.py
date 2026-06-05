@@ -22,6 +22,8 @@ try:
     features = model_data['features']
 except Exception as e:
     st.error("Хатогӣ дар боркунии модел. Боварӣ ҳосил кунед, ки файли 'best_harvest_model.pkl' мавҷуд аст.")
+    # Добавляем вывод технической детали ошибки:
+    st.exception(e) 
     st.stop()
 
 # Заголовок интерфейса
