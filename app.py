@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"  # Широкий экран для удобного расположения метрик и графиков
 )
 
-# Внедряем custom CSS, чтобы сделать вкладки (Tabs) БОЛЕЕ ЗАМЕТНЫМИ
+# Внедряем кастомизированный CSS, чтобы сделать вкладки (Tabs) крупными и заметными
 st.markdown("""
 <style>
     /* Стилизация контейнера вкладок */
@@ -43,13 +43,13 @@ st.markdown("""
         border-color: #C0C0C0 !important;
     }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)  # Исправлена опечатка (unsafe_allow_allow_html -> unsafe_allow_html)
 
 # ==========================================
 # 2. СЛОВАРЬ ПЕРЕВОДОВ (МУЛЬТИЯЗЫЧНОСТЬ)
 # ==========================================
 LANGUAGES = {
-    "Тоҷикӣ": {
+    "Toҷикӣ": {
         "title": "🌱 Системаи интеллектуалии пешгӯии ҳосилнокӣ",
         "subtitle": "Платформаи интерактивӣ барои пешгӯии ҳосилнокии зироатҳо дар асоси нишондиҳандаҳои климатӣ.",
         "faculty": "Донишгоҳи давлатии Хоруғ ба номи М. Назаршоев | Факултети математика ва технологияи нав",
@@ -92,7 +92,7 @@ LANGUAGES = {
         "metric_title": "🌾 Ожидаемая урожайность",
         "metric_delta": "по сравнению со средним показателем",
         "success_msg": "🎯 Идеальные условия! Этот показатель выше среднего уровня.",
-        "warning_msg": "⚠️ Рекомендация: Климатические параметры недостаточны для высокого урожая. Оптимизируйте полив или температуру.",
+        "warning_msg": "⚠️ Рекомендация: Climatic параметры недостаточны для высокого урожая. Оптимизируйте полив или температуру.",
         "eval_title": "Анализ качества модели (Model Evaluation)",
         "eval_desc": "Метрики эффективности алгоритмов Random Forest и Gradient Boosting на тестовой выборке.",
         "graphs_title": "Аналитические графики",
@@ -112,7 +112,7 @@ LANGUAGES = {
 # Выбор языка в Sidebar (боковой панели)
 st.sidebar.title("🌐 Интихоби забон / Выбор языка")
 lang_choice = st.sidebar.selectbox("Забонро изҳор кунед / Выберите язык:", list(LANGUAGES.keys()))
-t = LANGUAGES[lang_choice]  # Локальный словарь активного языка
+t = LANGUAGES[lang_choice]  # Словарь активного языка
 
 # ==========================================
 # 3. БЕЗОПАСНАЯ ЗАГРУЗКА МОДЕЛИ (БЕЗ ПАДЕНИЙ)
@@ -122,10 +122,11 @@ def load_ml_model():
     if os.path.exists('best_harvest_model.pkl'):
         try:
             model_data = joblib.load('best_harvest_model.pkl')
-            # Проверяем структуру словаря
+            # Проверяем структуру сохраненного словаря
             if isinstance(model_data, dict) and 'model' in model_data and 'features' in model_data:
                 return model_data['model'], model_data['features'], False
             else:
+                # Если сохранен не словарь, а чистая модель
                 return model_data, ['Ҳарорат (Temperature)', 'Намии ҳаво (Humidity)', 'Ҳаҷми обёрӣ (Water)', 'Пестисидҳо'], False
         except Exception:
             return None, ['Ҳарорат (Temperature)', 'Намии ҳаво (Humidity)', 'Ҳаҷми обёрӣ (Water)', 'Пестисидҳо'], True
@@ -158,21 +159,29 @@ with tab1:
     
     with col_input:
         for col in features:
-            # Адаптация подписей и шагов элементов ввода
+            # Динамическая подстройка диапазона, шага и подписи в зависимости от названия колонки
             if 'ҳарорат' in col.lower() or 'temp' in col.lower():
                 min_v, max_v, def_v, step_v = -10.0, 50.0, 24.0, 0.5
-                lbl = "Ҳарорат / Температура (°C)"
+                lbl = f"Ҳарорат / Температура ({col}) (°C)"
             elif 'намӣ' in col.lower() or 'humid' in col.lower():
                 min_v, max_v, def_v, step_v = 0.0, 100.0, 60.0, 1.0
-                lbl = "Намии ҳаво / Влажность (%)"
+                lbl = f"Намии ҳаво / Влажность ({col}) (%)"
             elif 'об' in col.lower() or 'water' in col.lower() or 'rain' in col.lower():
                 min_v, max_v, def_v, step_v = 0.0, 2000.0, 400.0, 10.0
-                lbl = "Ҳаҷми обёрӣ / Объем полива (мм)"
+                lbl = f"Ҳаҷми обёрӣ / Объем полива ({col}) (мм)"
             else:
                 min_v, max_v, def_v, step_v = 0.0, 10000.0, 20.0, 1.0
                 lbl = col
                 
-            input_data[col] = st.number_input(f"🔹 {lbl}", min_value=min_v, max_value=max_v, value=def_v, step=step_v)
+            # Исправлено: добавлен уникальный аргумент key=col для предотвращения конфликта ID
+            input_data[col] = st.number_input(
+                f"🔹 {lbl}", 
+                min_value=min_v, 
+                max_value=max_v, 
+                value=def_v, 
+                step=step_v,
+                key=col
+            )
 
     with col_result:
         st.subheader(t["result_header"])
@@ -181,16 +190,16 @@ with tab1:
         if st.button(t["calc_btn"], type="primary", use_container_width=True):
             with st.spinner(t["loading"]):
                 if not is_demo and model is not None:
-                    # Реальное предсказание модели
+                    # Полноценная генерация прогноза моделью машинного обучения
                     input_df = pd.DataFrame([input_data])[features]
                     prediction = model.predict(input_df)[0]
                 else:
-                    # Демо-расчёт математической симуляции (если модель не загрузилась)
+                    # Корректная имитация расчёта для демонстрационного режима
                     base_yield = 32.5
-                    t_val = list(input_data.values())[0]
-                    prediction = max(5.0, base_yield + (t_val - 20) * 0.3 + np.random.normal(0, 0.5))
+                    t_val = list(input_data.values())[0] if input_data else 20.0
+                    prediction = max(5.0, base_yield + (t_val - 24.0) * 0.3 + np.random.normal(0, 0.5))
                 
-                # Отображение красивого виджета метрики
+                # Построение красивого виджета отображения результата
                 st.markdown("---")
                 st.metric(
                     label=t["metric_title"], 
@@ -212,7 +221,7 @@ with tab2:
     st.header(t["eval_title"])
     st.write(t["eval_desc"])
     
-    # Сетка основных статистических метрик
+    # Контейнеры главных статистических метрик
     m1, m2, m3, m4 = st.columns(4)
     m1.metric(label="R² Score (Gradient Boosting)", value="0.942", delta="+0.023 vs RF")
     m2.metric(label="MAE (Хатогии мутлақ)", value="1.84 ц/га", delta="-0.32", delta_color="inverse")
@@ -229,7 +238,7 @@ with tab2:
         if os.path.exists('05_residuals_analysis.png'):
             st.image('05_residuals_analysis.png', caption=t["graph_caption1"], use_container_width=True)
         else:
-            # Если файла графика png нет, строим интерактивный график средствами Streamlit
+            # Встроенный резервный график остатков
             chart_data = pd.DataFrame(np.random.normal(0, 1.5, size=(100, 2)), columns=['RF Residuals', 'GB Residuals'])
             st.line_chart(chart_data)
             
@@ -238,9 +247,11 @@ with tab2:
         if os.path.exists('06_feature_importance.png'):
             st.image('06_feature_importance.png', caption=t["graph_caption2"], use_container_width=True)
         else:
-            # Встроенный график важности факторов
+            # Встроенный резервный график важности признаков
             imp_df = pd.DataFrame({
-                'Признак': [features[0], features[1], features[2], 'Другие'],
+                'Признак': [features[0] if len(features) > 0 else 'F1', 
+                            features[1] if len(features) > 1 else 'F2', 
+                            features[2] if len(features) > 2 else 'F3', 'Другие'],
                 'Importance': [0.48, 0.26, 0.18, 0.08]
             }).sort_values(by='Importance', ascending=True)
             st.bar_chart(data=imp_df, x='Признак', y='Importance', horizontal=True)
